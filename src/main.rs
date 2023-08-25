@@ -1,6 +1,7 @@
 use clap::Parser;
 use cli::Cli;
 use std::fs;
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 
 mod cli;
@@ -13,16 +14,22 @@ fn main() {
         _ => ".".to_string(),
     };
 
-    println!("{}", path);
-
     let (nvm_config_path, package_config_path) = find_config(&path);
-    println!("nvm config path is :{:?}", nvm_config_path);
-    println!("package config path is :{:?}", package_config_path);
+    if let Some(path) = nvm_config_path {
+        println!("nvm config path is :{:?}", path);
+        excute_nvm_config(&path)
+    } else if let Some(path) = package_config_path {
+        println!("package config path is :{:?}", path);
+        excute_package_config(&path);
+    } else {
+        println!("Found nothing");
+    }
 }
 
-fn find_config(path: &String) -> (String, String) {
-    let mut nvm_config_path = String::new();
-    let mut package_config_path = String::new();
+fn find_config(path: &String) -> (Option<String>, Option<String>) {
+    let mut nvm_config_path: Option<String> = None;
+    let mut package_config_path: Option<String> = None;
+
     if let Ok(entries) = fs::read_dir(path) {
         for entry in entries {
             if let Ok(entry) = entry {
@@ -39,9 +46,26 @@ fn find_config(path: &String) -> (String, String) {
     (nvm_config_path, package_config_path)
 }
 
-fn get_file_path(path: PathBuf) -> String {
+fn get_file_path(path: PathBuf) -> Option<String> {
     match path.to_str() {
-        Some(path_str) => path_str.to_string(),
-        _ => String::new(),
+        Some(path_str) => Some(path_str.to_string()),
+        _ => None,
     }
+}
+
+fn excute_nvm_config(path: &String) {
+    if let Ok(content) = fs::read(path) {
+        if let Some(version) = String::from_utf8_lossy(&content).lines().next() {
+            println!("{}", version);
+            // 调用外部命令，nvm 切换
+        }
+    }
+}
+
+fn excute_package_config(_path: &String) {
+    todo!()
+}
+
+fn excute_nvm_switch(version: &str) -> bool {
+    todo!()
 }
